@@ -10,7 +10,9 @@
             "type": "dart",
             "args": [
                 "--web-renderer",
-                "auto"
+                // "--wasm",
+                "auto",
+                "--web-port=55001"
             ]
         },
         {

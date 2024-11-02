@@ -8,12 +8,16 @@ environment:
 
 dependencies:
   carousel_slider: ^5.0.0
+  fl_chart: ^0.69.0
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   http: ^1.2.2
-  provider: ^6.1.2
+  provider: 
   reactive_variables: ^1.0.0
-  shared_preferences: ^2.3.2
+  shared_preferences: 
+  universal_html: ^2.2.4
 
 dev_dependencies:
   flutter_test:

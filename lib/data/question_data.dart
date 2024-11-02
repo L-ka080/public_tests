@@ -4,10 +4,10 @@ class QuestionData {
   String? questionTitle;
   // List<Map<String, bool>> answers = [];
   List<AnswerData> answers = [];
-  int questionIndex;
+  int? questionIndex;
 
   QuestionData({
     this.questionTitle,
-    this.questionIndex = 0,
+    // this.questionIndex = 0,
   });
 }

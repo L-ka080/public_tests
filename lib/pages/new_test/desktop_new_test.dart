@@ -1,10 +1,15 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:public_tests/api%20handler/api_handler.dart';
+import 'package:public_tests/constants/const_texts.dart';
+import 'package:public_tests/data/answer_data.dart';
+import 'package:public_tests/data/provider/user_provider.dart';
 import 'package:public_tests/data/test_data.dart';
 import 'package:public_tests/data/test_settings_data.dart';
-import 'package:public_tests/widgets/centered_page.dart';
-import 'package:public_tests/widgets/question_creator.dart';
-import 'package:public_tests/widgets/test_settings.dart';
+import 'package:public_tests/widgets/Pages/centered_page.dart';
+import 'package:public_tests/widgets/Tests/question_creator.dart';
+import 'package:public_tests/widgets/Tests/test_settings.dart';
 
 import '../../data/question_data.dart';
 
@@ -114,10 +119,9 @@ class _DesktopNewTestState extends State<DesktopNewTest> {
                         padding: const EdgeInsets.symmetric(
                             vertical: 20, horizontal: 65),
                         child: RichText(
-                          text: const TextSpan(
-                              text:
-                                  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam rhoncus dolor at libero auctor, eu egestas metus consequat. Nunc ut sodales lacus. Nullam feugiat, est sed egestas aliquet, nulla sapien ultricies libero, nec ultricies sapien lectus non odio. Quisque ut ipsum vitae elit placerat sagittis. Duis tristique bibendum leo, sit amet pellentesque ante imperdiet ac. Donec vitae ipsum eget turpis vehicula egestas in id sem. Aliquam ac massa in nisl gravida cursus. Vivamus iaculis aliquam tortor vel porttitor. Ut tempus, eros vel posuere vehicula, quam ipsum varius urna, sed tempor justo nibh eget felis."),
-                          //FIXME Заменить на реальный текст, подгружаемый из констант
+                          text: TextSpan(
+                              text: selectedTestType.contains("Survey") ? ConstTexts.SurveyDescription : ConstTexts.QuizDescription
+                              ),
                         ),
                       ),
                     ],
@@ -144,7 +148,10 @@ class _DesktopNewTestState extends State<DesktopNewTest> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.question_answer_outlined, size: 35,),
+                                    Icon(
+                                      Icons.question_answer_outlined,
+                                      size: 35,
+                                    ),
                                     Text("Here your questions go!")
                                   ],
                                 ),
@@ -171,7 +178,7 @@ class _DesktopNewTestState extends State<DesktopNewTest> {
                             children: [
                               Visibility(
                                 visible: selectedTestType.first != testTypes[0],
-                                child: TestSettings(
+                                child: TestSettingsBuilder(
                                   testSettingsData: testSettingsData,
                                 ),
                               ),
@@ -245,40 +252,55 @@ class _DesktopNewTestState extends State<DesktopNewTest> {
                           icon: const Icon(Icons.arrow_forward),
                         )
                       : FloatingActionButton.extended(
-                          onPressed: () {
+                          onPressed: () async {
                             TestData testData = TestData(
-                              title: newTestTitle,
-                              questions: questions,
-                              testSettings: testSettingsData,
+                                title: newTestTitle,
+                                testId: null,
+                                testSettings: testSettingsData,
+                                results: [],
+                                createdOn:
+                                    DateTime.now().millisecondsSinceEpoch *
+                                        1000);
+
+                            testData.questions = questions;
+
+//                             print(testData.title);
+
+//                             for (var question in testData.questions) {
+//                               print("Q: ${question.questionTitle}");
+//                               for (var answer in question.answers) {
+//                                 print(
+//                                     "A: ${answer.answerTitle}: ${answer.isAnswerChecked}");
+//                               }
+//                             }
+
+//                             print("""
+// Test type: ${testData.testSettings.testType}
+// Time: ${testData.testSettings.isTimeLimited}: ${testData.testSettings.time}
+// Correct answers after: ${testData.testSettings.toShowCorrectAnswersAfter}
+// Shuffle questtions: ${testData.testSettings.toShuffleQuestions}
+// "Shuffle answers: ${testData.testSettings.toShuffleAnswers}""");
+
+                            MapEntry<String, bool> testState =
+                                verifyTestContents(testData);
+                            
+                            SnackBar message = SnackBar(
+                              content: Text(testState.key),
                             );
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(message);
+                            
+                            if (testState.value) {
+                              String currentUserToken =
+                                  context.read<UserProvider>().userToken;
 
-                            print(testData.title);
+                              testData.testId = await ApiHandler.createNewTest(
+                                  testData, currentUserToken);
 
-                            for (var question in testData.questions) {
-                              print("Q: ${question.questionTitle}");
-                              for (var answer in question.answers) {
-                                print(
-                                    "A: ${answer.answerTitle}: ${answer.isAnswerChecked}");
+                              if (context.mounted) {
+                                Navigator.pop(context, testData);
                               }
                             }
-
-                            print(
-                              "Test type: ${testData.testSettings.testType}",
-                            );
-                            print(
-                              "Time: ${testData.testSettings.isTimeLimited}: ${testData.testSettings.time}",
-                            );
-                            print(
-                              "Correct answers after: ${testData.testSettings.toShowCorrectAnswersAfter}",
-                            );
-                            print(
-                              "Shuffle questtions: ${testData.testSettings.isShuffleQuestions}",
-                            );
-                            print(
-                              "Shuffle answets: ${testData.testSettings.isShuffleAnswers}",
-                            );
-
-                            Navigator.pop(context, testData);
                           },
                           heroTag: null,
                           label: const Text("Save"),
@@ -304,20 +326,6 @@ class _DesktopNewTestState extends State<DesktopNewTest> {
   int setSetValueToIndex(Set<String> targetSet, List<String> allValues) {
     return allValues.indexOf(targetSet.toList()[0]);
   }
-
-  // bool verifyAnswers(List<AnswerCreator> answers) { //TODO Перепиасть функцию проверки состояния ответов
-  //   List<bool> answersStates = [];
-
-  //   for (var i = 0; i < answers.length; i++) {
-  //     answersStates.add(answers[i].isAnswerChecked);
-  //   }
-
-  //   if (answersStates.contains(true)) {
-  //     return true;
-  //   } else {
-  //     return false;
-  //   }
-  // }
 
   String getShortQuestionTitle(String title) {
     int startIndex = 0;
@@ -351,10 +359,35 @@ class _DesktopNewTestState extends State<DesktopNewTest> {
       for (QuestionCreator questionCreator in questionsWidgets) {
         questionCreator.questionData.questionIndex =
             questionsWidgets.indexOf(questionCreator);
-            questionCreator.questionTitleController.text = questions[questions.indexOf(questionCreator.questionData)].questionTitle ?? "";
+        questionCreator.questionTitleController.text =
+            questions[questions.indexOf(questionCreator.questionData)]
+                    .questionTitle ??
+                "";
         // questionCreator.questionData.questionTitle = questions[questions.indexOf(questionCreator.questionData)].questionTitle;
         // questionCreator.createState();
       }
     });
+  }
+
+  MapEntry<String, bool> verifyTestContents(TestData data) {
+    if (data.questions.isEmpty) {
+      return const MapEntry("The test must have at least one question", false);
+    }
+
+    for (QuestionData question in data.questions) {
+      int counter = 0;
+
+      for (AnswerData answer in question.answers) {
+        if (answer.isAnswerChecked) {
+          counter += 1;
+        }
+      }
+
+      if (counter == 0) {
+        return const MapEntry("At least one answer must be checked", false);
+      }
+    }
+
+    return MapEntry("Test '${data.title}' has been created", true);
   }
 }

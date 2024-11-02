@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:public_tests/pages/home/desktop_home_page.dart';
-import 'package:public_tests/widgets/add_test_action_button.dart';
+import 'package:public_tests/widgets/Tests/add_test_action_button.dart';
 
 class MobileHomePage extends StatefulWidget {
   const MobileHomePage({super.key});

@@ -1,0 +1,111 @@
+using Microsoft.AspNetCore.Mvc;
+
+[Route("api/user")]
+[ApiController]
+public class UserController : ControllerBase
+{
+    private readonly IUserRepository _userRepo;
+    public UserController(IUserRepository userRepo)
+    {
+        _userRepo = userRepo;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllAsync()
+    {
+        // List<User> users = await _context.Users.ToListAsync();
+        List<User> users = await _userRepo.GetAllAsync();
+
+        List<UserDTO> userDTOs = users.Select(selection => selection.ToUserDTO()).ToList();
+
+        return Ok(users);
+    }
+
+    [HttpGet("{userId:int}")]
+    public async Task<IActionResult> GetByIdAsync([FromRoute] int userId)
+    {
+        // var user = await _context.Users.FindAsync(userId);
+        User? user = await _userRepo.GetByIdAsync(userId);
+
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(user.ToUserDTO());
+    }
+
+    // [HttpPost]
+    // public async Task<IActionResult> ToLogInUser([FromBody] string userCredData)
+    // {
+    //     List<string> userDataList = userCredData.Split("-").ToList();
+    //     KeyValuePair<string, string>? userInfo = await _userRepo.GetByCredAsync(userDataList[0], userDataList[1]);
+
+    //     if (userInfo != null)
+    //     {
+    //         return Ok(userInfo);
+    //     }
+
+    //     return NotFound();
+    // }
+
+    [HttpPost]
+    [ActionName(nameof(GetByIdAsync))]
+    public async Task<IActionResult> Create([FromBody] CreateUserRequestDTO requestBody)
+    {
+        User userModel = requestBody.ToUserFromCreate();
+
+        // await _context.AddAsync(userModel);
+        // await _context.SaveChangesAsync();
+        await _userRepo.CreateAsync(userModel);
+
+        return CreatedAtAction(nameof(GetByIdAsync), new { id = userModel.ID }, userModel.ToUserDTO());
+    }
+
+    [HttpPut]
+    [Route("{userId:int}")]
+    public async Task<IActionResult> Update([FromRoute] int userId, [FromBody] UpdateUserRequestDTO userRequestDTO)
+    {
+        // User? originalUserModel = await _context.Users.FirstOrDefaultAsync(user => user.ID == userId);
+
+        // if (originalUserModel == null)
+        // {
+        //     return NotFound();
+        // }
+
+        // originalUserModel.Username = requestBody.Username;
+        // originalUserModel.Password = requestBody.Password;
+        // originalUserModel.Email = requestBody.Email;
+        // originalUserModel.Name = requestBody.Name;
+        // originalUserModel.LastName = requestBody.LastName;
+
+        // await _context.SaveChangesAsync();
+        User? updatedUserModel = await _userRepo.UpdateAsync(userId, userRequestDTO);
+
+        if (updatedUserModel == null) return NotFound();
+
+        return Ok(updatedUserModel.ToUserDTO());
+    }
+
+    [HttpDelete]
+    [Route("{userId:int}")]
+    public async Task<IActionResult> Delete([FromRoute] int userId)
+    {
+        // User? originalUserModel = await _context.Users.FirstOrDefaultAsync(user => user.ID == userId);
+
+        // if (originalUserModel == null)
+        // {
+        //     return NotFound();
+        // }
+
+        // _context.Users.Remove(originalUserModel);
+
+        // await _context.SaveChangesAsync();
+
+        User? originalUserModel = await _userRepo.DeleteAsync(userId);
+
+        if (originalUserModel == null) return NotFound();
+
+        return NoContent();
+    }
+}

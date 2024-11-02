@@ -1,6 +1,6 @@
 class AnswerData {
   String? answerTitle;
-  bool isAnswerChecked = false;
+  bool isAnswerChecked;
 
   AnswerData({
     this.answerTitle,
